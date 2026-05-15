@@ -1,0 +1,6 @@
+{
+  "type": "telegram",
+  "default_agent": "_main",
+  "allowed_chat_ids": [],
+  "bot_token": "REPLACE_WITH_YOUR_BOT_TOKEN_FROM_BOTFATHER"
+}

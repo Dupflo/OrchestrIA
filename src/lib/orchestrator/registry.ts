@@ -1,0 +1,146 @@
+import fs from "fs";
+import path from "path";
+import { SpawnedAgent } from "./agent";
+import { loadAgentConfig, loadSystemPrompt, loadMemory, ensureLogsDir, ORCHESTRIA_HOME } from "./config";
+import { sseBroadcast } from "./sse";
+import { getDb } from "../db";
+import { createCard, updateCardByMissionId } from "../kanbanRepo";
+import type { ClaudeEvent } from "./types";
+
+function newMissionId(): string {
+  return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export type SpawnKind = "chat" | "mission" | "channel";
+
+export interface SpawnOptions {
+  sourceChannel?: string;
+  sourceMeta?: Record<string, unknown>;
+  resumeSessionId?: string;
+  kind?: SpawnKind;
+  /** When true, do not INSERT a kanban row — caller already has a card to PATCH with mission_id (e.g. Board spawn). */
+  skipKanbanCard?: boolean;
+  /** Routine that triggered this run, if any (for cron-scheduled missions). */
+  routineId?: string;
+}
+
+type CompletionListener = (info: {
+  missionId: string;
+  agentName: string;
+  status: "done" | "failed" | "halted";
+  sourceChannel: string | null;
+  sourceMeta: Record<string, unknown> | null;
+}) => void;
+
+class AgentRegistry {
+  private live = new Map<string, SpawnedAgent>();
+  private completionListeners = new Set<CompletionListener>();
+
+  onMissionComplete(listener: CompletionListener): () => void {
+    this.completionListeners.add(listener);
+    return () => this.completionListeners.delete(listener);
+  }
+
+  spawn(agentName: string, mission: string, opts: SpawnOptions = {}): SpawnedAgent {
+    const config = loadAgentConfig(agentName);
+    const scope = config.memoryScope ?? "USER";
+    const systemPrompt = loadSystemPrompt(agentName) + loadMemory(agentName, scope);
+    const missionId = newMissionId();
+    const sourceChannel = opts.sourceChannel ?? null;
+    const sourceMeta = opts.sourceMeta ?? null;
+    // If scope is NONE, never resume a previous session — always start fresh
+    const resumeSessionId = scope === "NONE" ? undefined : opts.resumeSessionId;
+
+    const db = getDb();
+    const kind = opts.kind ?? "mission";
+    db.prepare(
+      `INSERT INTO missions (id, agent_id, title, status, start_ts, created_at, source_channel, source_meta, kind, routine_id)
+       VALUES (?, ?, ?, 'running', unixepoch(), unixepoch(), ?, ?, ?, ?)`
+    ).run(missionId, agentName, mission, sourceChannel, sourceMeta ? JSON.stringify(sourceMeta) : null, kind, opts.routineId ?? null);
+
+    const agent = new SpawnedAgent(missionId, agentName, config, systemPrompt, mission, resumeSessionId);
+    this.live.set(missionId, agent);
+
+    if (kind !== "chat" && !opts.skipKanbanCard) {
+      createCard({ title: mission, agent: agentName, col: "doing", mission_id: missionId });
+    }
+
+    const setSession = db.prepare("UPDATE missions SET claude_session_id = ? WHERE id = ?");
+    agent.on("session", (sid: string) => {
+      setSession.run(sid, missionId);
+    });
+
+    const insertEvent = db.prepare(
+      `INSERT INTO events (mission_id, agent_id, ts, kind, body) VALUES (?, ?, ?, ?, ?)`
+    );
+    const finishMission = db.prepare(
+      `UPDATE missions SET status = ?, end_ts = unixepoch() WHERE id = ?`
+    );
+    const updateCost = db.prepare(
+      `UPDATE missions SET cost_usd = ?, tokens_in = ?, tokens_out = ? WHERE id = ?`
+    );
+
+    agent.on("event", (ev: ClaudeEvent) => {
+      insertEvent.run(missionId, agentName, Math.floor(ev.timestamp / 1000), ev.type, JSON.stringify(ev.payload));
+      sseBroadcast(missionId, ev, agentName);
+      this.appendLog(agentName, ev);
+      // Capture cost & token usage from `result` events emitted by the Claude CLI
+      if (ev.type === "result") {
+        const p = ev.payload as Record<string, unknown>;
+        const cost = typeof p.total_cost_usd === "number" ? p.total_cost_usd : null;
+        const usage = p.usage as Record<string, unknown> | null | undefined;
+        const tokIn = typeof usage?.input_tokens === "number" ? usage.input_tokens : null;
+        const tokOut = typeof usage?.output_tokens === "number" ? usage.output_tokens : null;
+        if (cost !== null) updateCost.run(cost, tokIn ?? 0, tokOut ?? 0, missionId);
+      }
+    });
+
+
+    agent.on("done", (exitCode: number) => {
+      const finalStatus: "done" | "failed" = exitCode === 0 ? "done" : "failed";
+      finishMission.run(finalStatus, missionId);
+      const closing: ClaudeEvent = {
+        type: "MissionComplete",
+        timestamp: Date.now(),
+        payload: { exitCode, status: finalStatus },
+      };
+      insertEvent.run(missionId, agentName, Math.floor(closing.timestamp / 1000), closing.type, JSON.stringify(closing.payload));
+      sseBroadcast(missionId, closing, agentName);
+      this.live.delete(missionId);
+      // On mission complete, we DON'T auto-promote the card to "done" — the user keeps
+      // manual control of the column. We only tag failures so the UI can show a red badge.
+      // (Previously col was forced to "done", causing cards to jump straight to done when
+      // missions were fast.)
+      if (kind !== "chat" && finalStatus === "failed") {
+        updateCardByMissionId(missionId, { tags: ["failed"] });
+      }
+      for (const l of this.completionListeners) {
+        l({ missionId, agentName, status: finalStatus, sourceChannel, sourceMeta });
+      }
+    });
+
+    return agent;
+  }
+
+  get(missionId: string): SpawnedAgent | undefined {
+    return this.live.get(missionId);
+  }
+
+  list(): { missionId: string; agentName: string; startedAt: number }[] {
+    return Array.from(this.live.values()).map((a) => ({
+      missionId: a.missionId,
+      agentName: a.agentName,
+      startedAt: a.startedAt,
+    }));
+  }
+
+  private appendLog(agentName: string, ev: ClaudeEvent): void {
+    const dir = ensureLogsDir(agentName);
+    fs.appendFileSync(path.join(dir, "log.jsonl"), JSON.stringify(ev) + "\n");
+  }
+}
+
+const g = globalThis as { __mosRegistry?: AgentRegistry };
+export const registry = (g.__mosRegistry ??= new AgentRegistry());
+
+void ORCHESTRIA_HOME;

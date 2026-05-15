@@ -1,0 +1,27 @@
+{
+  "id": "_main",
+  "name": "_main",
+  "model": "claude-sonnet-4-6",
+  "permissionMode": "auto",
+  "cwd": "~",
+  "allowedTools": [
+    "Bash",
+    "Read",
+    "Edit",
+    "Write",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "channels": {
+    "slack": {
+      "on": false,
+      "value": ""
+    },
+    "email": {
+      "on": false,
+      "value": ""
+    }
+  },
+  "glyph": "▲",
+  "memoryScope": "USER"
+}

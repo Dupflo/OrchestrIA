@@ -1,0 +1,28 @@
+@import "./agent-os.css";
+@import "tailwindcss";
+
+/* ── per-route stylesheets (consolidated to avoid per-route layouts) ── */
+@import "./visualizer/visualizer.css";
+@import "./chat/chat.css";
+@import "./agents/agents.css";
+@import "./missions/missions.css";
+@import "./kanban/kanban.css";
+@import "./memory/memory.css";
+@import "./dashboard/dashboard.css";
+
+@theme inline {
+  --color-bg:           var(--bg);
+  --color-bg-elev:      var(--bg-elev);
+  --color-bg-elev-2:    var(--bg-elev-2);
+  --color-bg-elev-3:    var(--bg-elev-3);
+  --color-accent:       var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-ok:           var(--ok);
+  --color-warn:         var(--warn);
+  --color-err:          var(--err);
+  --color-info:         var(--info);
+  --color-text:         var(--text);
+  --color-text-dim:     var(--text-dim);
+  --color-text-faint:   var(--text-faint);
+  --color-text-muted:   var(--text-muted);
+}

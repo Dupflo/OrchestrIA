@@ -1,0 +1,12 @@
+{
+  "version": "0.42.1",
+  "tenant": "_main",
+  "mode": "local",
+  "airgapped": true,
+  "budgetHourlyUsd": 25,
+  "budgetHaltUsd": 30,
+  "defaultModel": "claude-sonnet-4-6",
+  "runsDir": "~/.orchestria/runs",
+  "memoryDir": "~/.orchestria/memory",
+  "agents": ["_main", "pinger"]
+}
