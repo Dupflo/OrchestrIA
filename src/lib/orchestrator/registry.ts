@@ -11,6 +11,16 @@ function newMissionId(): string {
   return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function envInt(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+/** Max concurrently-running agents. A flood (webhook/Telegram) must not spawn unbounded PTYs. */
+const MAX_CONCURRENT = envInt("ORCHESTRIA_MAX_CONCURRENT", 8);
+/** Wall-clock kill for a single mission, so a hung/looping `claude` can't live forever. */
+const MISSION_TIMEOUT_MS = envInt("ORCHESTRIA_MISSION_TIMEOUT_MS", 30 * 60 * 1000);
+
 export type SpawnKind = "chat" | "mission" | "channel";
 
 export interface SpawnOptions {
@@ -42,6 +52,11 @@ class AgentRegistry {
   }
 
   spawn(agentName: string, mission: string, opts: SpawnOptions = {}): SpawnedAgent {
+    if (this.live.size >= MAX_CONCURRENT) {
+      throw new Error(
+        `agent concurrency limit reached (${MAX_CONCURRENT}); try again once a running mission finishes`,
+      );
+    }
     const config = loadAgentConfig(agentName);
     const scope = config.memoryScope ?? "USER";
     const systemPrompt = loadSystemPrompt(agentName) + loadMemory(agentName, scope);
@@ -60,6 +75,11 @@ class AgentRegistry {
 
     const agent = new SpawnedAgent(missionId, agentName, config, systemPrompt, mission, resumeSessionId);
     this.live.set(missionId, agent);
+
+    const timeoutTimer = setTimeout(() => {
+      if (this.live.has(missionId)) agent.kill();
+    }, MISSION_TIMEOUT_MS);
+    timeoutTimer.unref?.();
 
     if (kind !== "chat" && !opts.skipKanbanCard) {
       createCard({ title: mission, agent: agentName, col: "doing", mission_id: missionId });
@@ -97,6 +117,7 @@ class AgentRegistry {
 
 
     agent.on("done", (exitCode: number) => {
+      clearTimeout(timeoutTimer);
       const finalStatus: "done" | "failed" = exitCode === 0 ? "done" : "failed";
       finishMission.run(finalStatus, missionId);
       const closing: ClaudeEvent = {

@@ -1,9 +1,11 @@
 import fs from "fs";
 import path from "path";
+import { assertSafeAgentName } from "./orchestrator/config";
 
 const ORCHESTRIA_HOME = path.join(process.cwd(), ".orchestria");
 
 function agentDir(agent: string): string {
+  assertSafeAgentName(agent);
   return path.join(ORCHESTRIA_HOME, "agents", agent);
 }
 

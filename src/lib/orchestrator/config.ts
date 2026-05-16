@@ -9,7 +9,21 @@ export const USER_ORCHESTRIA_HOME = path.join(os.homedir(), ".orchestria");
 /** Where GLOBAL-scope memory notes live. */
 export const GLOBAL_MEMORY_DIR = path.join(USER_ORCHESTRIA_HOME, "global-memory");
 
+const AGENT_NAME_RE = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Agent names flow in from URL params, request bodies and channel payloads.
+ * They are used to build filesystem paths, so anything outside this charset
+ * (notably `.` / `/`) would allow path traversal out of the agents dir.
+ */
+export function assertSafeAgentName(name: string): void {
+  if (typeof name !== "string" || !AGENT_NAME_RE.test(name)) {
+    throw new Error(`invalid agent name: ${JSON.stringify(name)}`);
+  }
+}
+
 export function agentDir(name: string): string {
+  assertSafeAgentName(name);
   return path.join(ORCHESTRIA_HOME, "agents", name);
 }
 

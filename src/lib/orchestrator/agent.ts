@@ -1,6 +1,8 @@
 import { spawn as ptySpawn, type IPty } from "node-pty";
 import { EventEmitter } from "events";
 import { execSync } from "child_process";
+import fs from "fs";
+import os from "os";
 import type { AgentFileConfig, ClaudeEvent, LiveStatus } from "./types";
 
 // Resolve `claude` to an absolute path once, using the user's login PATH.
@@ -14,7 +16,7 @@ function resolveClaudeBin(): string {
     if (found) candidates.unshift(found);
   } catch { /* ignore */ }
   for (const c of candidates) {
-    try { execSync(`test -x "${c}"`); cachedClaudeBin = c; return c; } catch { /* try next */ }
+    try { fs.accessSync(c, fs.constants.X_OK); cachedClaudeBin = c; return c; } catch { /* try next */ }
   }
   throw new Error("`claude` CLI not found in /opt/homebrew/bin, /usr/local/bin, or PATH");
 }
@@ -82,11 +84,19 @@ export class SpawnedAgent extends EventEmitter {
     const claudeBin = resolveClaudeBin();
     const enrichedPath = ["/opt/homebrew/bin", "/usr/local/bin", process.env.PATH ?? ""]
       .filter(Boolean).join(":");
+    // `config.cwd` comes from agent JSON — an invalid/missing dir would make
+    // node-pty throw at spawn. Fall back to the home directory instead.
+    let cwd = config.cwd;
+    try {
+      if (!fs.statSync(cwd).isDirectory()) cwd = os.homedir();
+    } catch {
+      cwd = os.homedir();
+    }
     this.pty = ptySpawn(claudeBin, args, {
       name: "xterm-256color",
       cols: 120,
       rows: 30,
-      cwd: config.cwd,
+      cwd,
       env: {
         ...process.env,
         PATH: enrichedPath,

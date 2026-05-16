@@ -130,6 +130,8 @@ Everything is optional — OrchestrIA boots with working defaults.
 | `ORCHESTRIA_CHANNELS_AUTOSTART` | on | Start channel listeners at boot |
 | `ORCHESTRIA_ROUTINES_AUTOSTART` | on | Start the routine scheduler |
 | `ORCHESTRIA_MEMORY_AUTORECORD` | on | Record mission outputs into memory |
+| `ORCHESTRIA_MAX_CONCURRENT` | `8` | Max agents running at once |
+| `ORCHESTRIA_MISSION_TIMEOUT_MS` | `1800000` | Per-mission wall-clock kill (ms) |
 
 See [`.env.example`](.env.example).
 
