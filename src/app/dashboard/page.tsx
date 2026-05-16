@@ -161,7 +161,7 @@ export default function DashboardPage() {
       {/* ── page header ─────────────────────────────────────────────── */}
       <div className="dash-ph">
         <div>
-          <div className="lbl">// DASHBOARD</div>
+          <div className="lbl">{"// DASHBOARD"}</div>
           <div className="big">
             {fmtCost(slice.cost)} <span style={{ fontSize: 13, color: "var(--text-faint)", marginLeft: 4 }}>spent · {range}</span>
           </div>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
         <div className="dcard">
           <div className="dcard-hd">
             <div>
-              <div className="t">// Spend</div>
+              <div className="t">{"// Spend"}</div>
               <div className="h">{view === "cost" ? "Daily cost ($)" : view === "missions" ? "Missions per day" : "Tokens per day"}</div>
             </div>
             <div className="right">
@@ -307,7 +307,7 @@ export default function DashboardPage() {
         <div className="dcard">
           <div className="dcard-hd">
             <div>
-              <div className="t">// Funnel</div>
+              <div className="t">{"// Funnel"}</div>
               <div className="h">Mission outcomes</div>
             </div>
             <div className="right">all time</div>
@@ -333,7 +333,7 @@ export default function DashboardPage() {
         <div className="dcard">
           <div className="dcard-hd">
             <div>
-              <div className="t">// Agents</div>
+              <div className="t">{"// Agents"}</div>
               <div className="h">Top by spend</div>
             </div>
             <div className="right">{byAgent.length} configured</div>
@@ -360,7 +360,7 @@ export default function DashboardPage() {
         <div className="dcard">
           <div className="dcard-hd">
             <div>
-              <div className="t">// Traces</div>
+              <div className="t">{"// Traces"}</div>
               <div className="h">Recent missions</div>
             </div>
             <div className="right">

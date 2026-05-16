@@ -7,7 +7,7 @@ import {
 import { resolveRoute } from "./router";
 import { registry } from "../orchestrator/registry";
 import { dispatchMissionReply } from "./reply";
-import { recordSubscriber, listSubscribers } from "./subscribers";
+import { recordSubscriber } from "./subscribers";
 import { getDb } from "../db";
 import type { ChannelConfig, TelegramChannelConfig } from "./types";
 import type { ClaudeEvent } from "../orchestrator/types";

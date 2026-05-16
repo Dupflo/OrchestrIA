@@ -328,7 +328,7 @@ export default function AgentEditor({
         <div className="claude-pane">
           <div className="hd">
             <div>
-              <div className="lbl">// CLAUDE.MD</div>
+              <div className="lbl">{"// CLAUDE.MD"}</div>
               <div className="sub">System prompt loaded into the agent on every spawn. Markdown supported.</div>
             </div>
             <div className="count">{promptLines} lines · {promptChars} chars</div>

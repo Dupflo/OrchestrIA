@@ -28,11 +28,15 @@ interface SpawnedAgentEvents {
   session: (sessionId: string) => void;
 }
 
+// Intentional interface/class merge: the homonymous interface gives strongly
+// typed `on`/`emit` overloads over EventEmitter. Safe and idiomatic here.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export declare interface SpawnedAgent {
   on<K extends keyof SpawnedAgentEvents>(event: K, listener: SpawnedAgentEvents[K]): this;
   emit<K extends keyof SpawnedAgentEvents>(event: K, ...args: Parameters<SpawnedAgentEvents[K]>): boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class SpawnedAgent extends EventEmitter {
   readonly missionId: string;
   readonly agentName: string;

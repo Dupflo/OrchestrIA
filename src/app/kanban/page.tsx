@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDroppable,
   type DragStartEvent, type DragEndEvent,
@@ -198,47 +199,19 @@ function extractStepText(ev: MissionEvent): string | null {
   return null;
 }
 
-interface ChannelInfo { name: string; type: string }
-interface Subscriber { chat_id: number; username?: string; first_name?: string }
 
 function DetailPanel({
-  card, onClose, onDelete, onSpawn, onCardUpdated,
+  card, onClose, onDelete, onSpawn,
 }: {
   card: KanbanCard;
   onClose: () => void;
   onDelete: (id: string) => void;
   onSpawn: (card: KanbanCard) => void;
-  onCardUpdated?: (c: KanbanCard) => void;
 }) {
   const [events, setEvents] = useState<MissionEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Channels + subscribers for the notify picker
-  const [channels, setChannels] = useState<ChannelInfo[]>([]);
-  const [subscribers, setSubscribers] = useState<Record<string, Subscriber[]>>({});
-  useEffect(() => {
-    fetch("/api/channels").then((r) => r.json()).then((d: { configured: { name: string; config: { type: string } }[]; subscribers?: Record<string, Subscriber[]> }) => {
-      setChannels((d.configured ?? []).map((c) => ({ name: c.name, type: c.config.type })));
-      setSubscribers(d.subscribers ?? {});
-    }).catch(() => {});
-  }, []);
-
-  // Notify state (mirrors card.notify_*, persisted via PATCH on change)
-  const notifyChannel = card.notify_channel ?? "";
-  const notifyOn = (card.notify_on ?? "never") as NotifyOn;
-  const targetChatIds = card.target_chat_ids ?? [];
-
-  const patchNotify = async (patch: { notify_channel?: string | null; notify_on?: NotifyOn; target_chat_ids?: number[] }) => {
-    const res = await fetch(`/api/kanban/${card.id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    if (res.ok) {
-      const updated = (await res.json()) as KanbanCard;
-      onCardUpdated?.(updated);
-    }
-  };
 
   useEffect(() => {
     if (!card.mission_id) return;
@@ -346,9 +319,9 @@ function DetailPanel({
             {card.mission_id && (
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                 <span style={{ color: "var(--text-faint)" }}>Mission</span>
-                <a href={`/missions/${card.mission_id}`} style={{ color: "var(--accent)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                <Link href={`/missions/${card.mission_id}`} style={{ color: "var(--accent)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
                   #{card.mission_id.slice(0, 14)}
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -711,7 +684,7 @@ export default function KanbanPage() {
         <div className="right">
           <div className="kb-view-switch">
             <a className="on">Board</a>
-            <a href="/missions" style={{ color: "var(--text-dim)", textDecoration: "none" }}>Table</a>
+            <Link href="/missions" style={{ color: "var(--text-dim)", textDecoration: "none" }}>Table</Link>
           </div>
           <button className="btn btn-primary btn-sm" onClick={() => setShowNew(true)}>+ New card</button>
         </div>

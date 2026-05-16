@@ -22,19 +22,6 @@ export interface Skill {
 
 const ID_RE = /^[a-zA-Z0-9_-]+$/;
 
-function parseFrontmatter(raw: string): Record<string, string> {
-  const match = raw.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return {};
-  const out: Record<string, string> = {};
-  for (const line of match[1].split("\n")) {
-    const colon = line.indexOf(":");
-    if (colon < 0) continue;
-    const key = line.slice(0, colon).trim();
-    out[key] = line.slice(colon + 1).trim().replace(/^['"]|['"]$/g, "");
-  }
-  return {};
-}
-
 function readClaudeSkill(dir: string, source: SkillSource): Skill | null {
   const skillMd = path.join(dir, "SKILL.md");
   if (!fs.existsSync(skillMd)) return null;

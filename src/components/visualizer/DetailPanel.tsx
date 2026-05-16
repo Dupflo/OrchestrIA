@@ -31,17 +31,17 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 
 export default function DetailPanel({ agent, agentMap, agents, edges, onSelect, onClose }: Props) {
   const router = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _ = { agents, onSelect };
 
+  const agentId = agent?.id;
   const counts = useMemo(() => {
-    if (!agent) return { edgesCount: 0 };
+    if (!agentId) return { edgesCount: 0 };
     let n = 0;
     for (const [a, b] of edges) {
-      if (a === agent.id || b === agent.id) n++;
+      if (a === agentId || b === agentId) n++;
     }
     return { edgesCount: n };
-  }, [agent?.id, edges]);
+  }, [agentId, edges]);
 
   if (!agent) {
     return (
@@ -148,7 +148,7 @@ export default function DetailPanel({ agent, agentMap, agents, edges, onSelect, 
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <span className="mono" style={{ fontSize: 10, letterSpacing: "0.08em", color: "var(--text-faint)" }}>
-            // CONSOLE
+            {"// CONSOLE"}
           </span>
           <span style={{
             fontSize: 9, padding: "1px 6px", borderRadius: 3,

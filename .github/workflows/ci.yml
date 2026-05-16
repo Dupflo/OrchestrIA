@@ -18,12 +18,8 @@ jobs:
 
       - run: npm ci
 
-      # Report-only for now: the codebase carries pre-existing lint debt
-      # (React-hooks purity/refs, declaration-merging). Tracked separately;
-      # flip to a hard gate once that backlog is cleared.
-      - name: Lint (report-only)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       - name: Typecheck
         run: npm run typecheck

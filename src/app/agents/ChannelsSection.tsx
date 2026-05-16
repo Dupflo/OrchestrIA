@@ -261,7 +261,7 @@ export default function ChannelsSection() {
     <>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, marginTop: 22 }}>
         <div className="mono" style={{ fontSize: 11, letterSpacing: "0.08em", color: "var(--text-faint)" }}>
-          // CHANNELS
+          {"// CHANNELS"}
         </div>
         <div style={{ fontSize: 10, color: "var(--text-faint)" }}>
           <span style={{ color: "var(--text-dim)", fontWeight: 600 }}>{active}</span> active ·{" "}

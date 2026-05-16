@@ -150,17 +150,8 @@ export default function SkillEditor({
     else { setConfirmDelete(false); setError("Suppression échouée"); }
   };
 
-  if (loading) return <div className="center-state">loading…</div>;
-  if (error && !skill && !isNew) return <div className="center-state err">{error}</div>;
-
-  const codeLines = code.split("\n").length;
-  const codeChars = code.length;
-  const saveLabel = saving ? (isNew ? "creating…" : "saving…")
-    : dirty ? (isNew ? "ready to create" : "unsaved changes")
-    : savedAt ? `all changes saved · ${new Date(savedAt).toTimeString().slice(0, 5)}`
-    : isNew ? "fill in an id to create" : "no changes";
-
   // ── Helpers to extract frontmatter from SKILL.md content ───────────────────
+  // Must run before any early return so hook order stays stable.
   const parsedFm = useMemo(() => {
     if (!code) return { body: code, tools: [] as string[] };
     const fmMatch = code.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
@@ -176,6 +167,17 @@ export default function SkillEditor({
 
     return { body, tools };
   }, [code]);
+
+  if (loading) return <div className="center-state">loading…</div>;
+  if (error && !skill && !isNew) return <div className="center-state err">{error}</div>;
+
+  const codeLines = code.split("\n").length;
+  const codeChars = code.length;
+  const saveLabel = saving ? (isNew ? "creating…" : "saving…")
+    : dirty ? (isNew ? "ready to create" : "unsaved changes")
+    : savedAt ? `all changes saved · ${new Date(savedAt).toTimeString().slice(0, 5)}`
+    : isNew ? "fill in an id to create" : "no changes";
+
 
   // ── claude-* skills are read-only: improved display ─────────────────────────
   if (isReadOnly && skill) {
@@ -262,7 +264,7 @@ export default function SkillEditor({
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
             <div className="hd" style={{ marginBottom: 16, paddingBottom: 10, borderBottom: "1px solid var(--line)" }}>
               <div>
-                <div className="lbl">// SKILL BODY</div>
+                <div className="lbl">{"// SKILL BODY"}</div>
                 <div className="sub">{codeLines} lines · {code.length} chars</div>
               </div>
             </div>
@@ -317,7 +319,7 @@ export default function SkillEditor({
         <div className="claude-pane">
           <div className="hd">
             <div>
-              <div className="lbl">// SKILL BODY</div>
+              <div className="lbl">{"// SKILL BODY"}</div>
               <div className="sub">Markdown / shell template. Loaded by agents when the skill is invoked.</div>
             </div>
             <div className="count">{codeLines} lines · {codeChars} chars</div>
