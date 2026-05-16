@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { safeJson } from "@/lib/api/json";
 import { registry } from "@/lib/orchestrator/registry";
 
 export const runtime = "nodejs";
@@ -56,7 +57,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     id: r.id,
     ts: r.ts,
     kind: r.kind,
-    payload: JSON.parse(r.body),
+    payload: safeJson(r.body, null),
   }));
 
   return NextResponse.json({

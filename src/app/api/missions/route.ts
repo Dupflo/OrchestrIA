@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { getDb } from "@/lib/db";
 import { registry } from "@/lib/orchestrator/registry";
 
@@ -43,7 +44,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as PostBody;
+  const body = await readJson<PostBody>(req);
+  if (!body) return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   if (!body.agent || !body.input) {
     return NextResponse.json({ error: "agent and input required" }, { status: 400 });
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { getDb } from "@/lib/db";
 import { signToken, hashToken } from "@/lib/remote/token";
 import { requireLocalhost } from "@/lib/remote/auth";
@@ -12,8 +13,8 @@ export async function POST(req: Request) {
   const localGate = requireLocalhost(req);
   if (localGate) return localGate;
 
-  const body = (await req.json()) as { client_name?: string };
-  if (!body.client_name || typeof body.client_name !== "string") {
+  const body = await readJson<{ client_name?: string }>(req);
+  if (!body || !body.client_name || typeof body.client_name !== "string") {
     return NextResponse.json({ error: "client_name required" }, { status: 400 });
   }
 

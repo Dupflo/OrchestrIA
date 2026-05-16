@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { safeJson } from "@/lib/api/json";
 import { removeConversationEntries, clearAllConversations } from "@/lib/memory/autorecord";
 
 export const runtime = "nodejs";
@@ -36,14 +37,14 @@ interface ChatMessage {
 function extractAssistantText(events: EventRow[]): string {
   for (let i = events.length - 1; i >= 0; i--) {
     if (events[i].kind === "result") {
-      const p = JSON.parse(events[i].body) as { result?: string };
+      const p = safeJson<{ result?: string }>(events[i].body, {});
       if (typeof p.result === "string") return p.result;
     }
   }
   const parts: string[] = [];
   for (const e of events) {
     if (e.kind !== "assistant") continue;
-    const p = JSON.parse(e.body) as { message?: { content?: Array<{ type?: string; text?: string }> } };
+    const p = safeJson<{ message?: { content?: Array<{ type?: string; text?: string }> } }>(e.body, {});
     const content = p.message?.content;
     if (Array.isArray(content)) {
       for (const c of content) {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { getRoutine, updateRoutine, deleteRoutine, type RoutineInput } from "@/lib/routines/repo";
 
 export const runtime = "nodejs";
@@ -13,7 +14,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = (await req.json()) as Partial<RoutineInput> & { paused?: boolean };
+  const body = await readJson<Partial<RoutineInput> & { paused?: boolean }>(req);
+  if (!body) return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   try {
     const updated = updateRoutine(id, body);
     if (!updated) return NextResponse.json({ error: "not_found" }, { status: 404 });

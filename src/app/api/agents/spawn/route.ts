@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { execSync } from "child_process";
 import { registry } from "@/lib/orchestrator/registry";
 import type { SpawnRequest } from "@/lib/orchestrator/types";
@@ -39,14 +40,15 @@ function explainSpawnError(e: unknown): { status: number; message: string; hint?
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as Partial<
+  const body = await readJson<Partial<
     SpawnRequest & {
       resume_session_id?: string;
       kind?: import("@/lib/orchestrator/registry").SpawnKind;
       source_meta?: Record<string, unknown>;
       source_channel?: string;
     }
-  >;
+  >>(req);
+  if (!body) return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   if (!body.agent_name || !body.mission) {
     return NextResponse.json({ error: "agent_name and mission are required" }, { status: 400 });
   }

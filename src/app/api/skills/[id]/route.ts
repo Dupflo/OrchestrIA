@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { readSkill, deleteSkill, updateSkill, SKILLS_DIR, type UpdateSkillInput } from "@/lib/skillsRepo";
 import fs from "fs";
 import path from "path";
@@ -37,7 +38,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = (await req.json()) as UpdateSkillInput;
+  const body = await readJson<UpdateSkillInput>(req);
+  if (!body) return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   const updated = updateSkill(id, body);
   if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json(updated);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { listRoutines, createRoutine, type RoutineInput } from "@/lib/routines/repo";
 
 export const runtime = "nodejs";
@@ -9,7 +10,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as Partial<RoutineInput>;
+  const body = await readJson<Partial<RoutineInput>>(req);
+  if (!body) return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   if (!body.id || !body.name || !body.cron_expr || !body.agent_id || !body.prompt) {
     return NextResponse.json({ error: "id, name, cron_expr, agent_id, prompt required" }, { status: 400 });
   }

@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { safeJson } from "@/lib/api/json";
 import { sseSubscribe } from "@/lib/orchestrator/sse";
 
 export const runtime = "nodejs";
@@ -24,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         .prepare("SELECT ts, kind, body FROM events WHERE mission_id = ? ORDER BY id ASC")
         .all(id) as EventRow[];
       for (const r of rows) {
-        write({ type: r.kind, timestamp: r.ts * 1000, payload: JSON.parse(r.body) });
+        write({ type: r.kind, timestamp: r.ts * 1000, payload: safeJson(r.body, null) });
       }
 
       const unsubscribe = sseSubscribe(id, (ev) => write(ev));

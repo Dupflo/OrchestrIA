@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { requireRemoteAuth, logRemoteCall } from "@/lib/remote/auth";
 import { registry } from "@/lib/orchestrator/registry";
 
@@ -9,8 +10,8 @@ export async function POST(req: Request) {
   const auth = requireRemoteAuth(req);
   if (!auth.ok) return auth.response;
 
-  const body = (await req.json()) as { agent?: string; input?: string };
-  if (!body.agent || !body.input) {
+  const body = await readJson<{ agent?: string; input?: string }>(req);
+  if (!body || !body.agent || !body.input) {
     logRemoteCall(auth.session, req, 400);
     return NextResponse.json({ error: "agent and input required" }, { status: 400 });
   }

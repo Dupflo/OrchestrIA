@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/api/json";
 import { getAgentConfig, deleteAgent, updateAgent, type UpdateAgentInput } from "@/lib/agentsRepo";
 
 export const runtime = "nodejs";
@@ -13,7 +14,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = (await req.json()) as UpdateAgentInput;
+  const body = await readJson<UpdateAgentInput>(req);
+  if (!body) return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   const updated = updateAgent(id, body);
   if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json(updated);
