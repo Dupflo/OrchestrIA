@@ -83,7 +83,9 @@ scheduled agents you can watch on the dashboard.
 - **Routines** — cron-style scheduled missions with completion notifications.
   No system `crontab`/`launchd` needed.
 - **Scoped memory** — per-agent notes with `NONE` / `SESSION` / `USER` /
-  `GLOBAL` scopes, auto-injected into the system prompt.
+  `GLOBAL` scopes, auto-injected into the system prompt. Opt-in
+  **distillation** turns rolled-over transcript into a compact `learnings.md`,
+  so an agent gets *sharper* with use instead of just accumulating logs.
 - **Skills** — reusable, filesystem-defined tools attachable to agents.
 - **Remote access** — issue scoped, expiring tokens for external agents, with
   rate limiting and an audit log.
@@ -130,6 +132,7 @@ Everything is optional — OrchestrIA boots with working defaults.
 | `ORCHESTRIA_CHANNELS_AUTOSTART` | on | Start channel listeners at boot |
 | `ORCHESTRIA_ROUTINES_AUTOSTART` | on | Start the routine scheduler |
 | `ORCHESTRIA_MEMORY_AUTORECORD` | on | Record mission outputs into memory |
+| `ORCHESTRIA_MEMORY_DISTILL` | off | Distill rolled-over memory into `learnings.md` (opt-in; uses tokens) |
 | `ORCHESTRIA_MAX_CONCURRENT` | `8` | Max agents running at once |
 | `ORCHESTRIA_MISSION_TIMEOUT_MS` | `1800000` | Per-mission wall-clock kill (ms) |
 
