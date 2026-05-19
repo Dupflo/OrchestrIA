@@ -5,7 +5,7 @@
 
 # OrchestrIA — Agentic OS
 
-**A local-first platform to orchestrate, supervise and persist Claude agents — on your own machine.**
+**A local-first platform to orchestrate, supervise and persist AI coding agents — Claude or OpenAI/Codex — on your own machine.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
@@ -16,16 +16,19 @@
 ---
 
 OrchestrIA is a conductor for AI agents that runs entirely on your own
-machine. It spawns [Claude](https://claude.com) instances as long-lived,
-configurable agents, coordinates them across channels (Telegram, webhooks),
-schedules recurring missions, gives every agent scoped memory, and renders the
-whole thing as a live web dashboard.
+machine. It spawns long-lived, configurable agents — each backed by the
+provider you pick per agent ([Claude](https://claude.com) or
+[OpenAI/Codex](https://openai.com)) — coordinates them across channels
+(Telegram, webhooks), schedules recurring missions, gives every agent scoped
+memory, and renders the whole thing as a live web dashboard.
 
 **Nothing leaves your machine.** State lives in a single SQLite file you own —
 no cloud database, no external sync, no telemetry. And there is no hosted API
-or Anthropic SDK: OrchestrIA drives the official `claude` CLI over a
-pseudo-terminal, so model access and billing stay inside your existing Claude
-CLI session — no extra API key, no second bill.
+or vendor SDK: OrchestrIA drives the official `claude` and `codex` CLIs over a
+pseudo-terminal, so model access and billing stay inside your existing CLI
+sessions — no extra API key, no second bill. Not tied to a single vendor: an
+agent's `provider` is just a config field, and adding another backend is one
+file.
 
 ## Why
 
@@ -83,6 +86,10 @@ The stats never leave your machine; they come straight from the local DB.
 
 - **Agent mesh** — define agents as folders (`config.json` + system prompt),
   connect sub-agents to an orchestrator, visualize the live graph.
+- **Pluggable providers** — each agent runs on the backend you choose
+  (`"provider": "claude"` drives the `claude` CLI, `"openai"` drives
+  `codex exec`); default is `claude` so existing agents are untouched. Mix
+  providers across the fleet; add a new one with a single file.
 - **Missions & runs** — every agent invocation is a tracked mission with cost,
   token usage, duration and a full event log.
 - **Channels** — talk to agents from Telegram or inbound webhooks; route by
@@ -104,8 +111,11 @@ The stats never leave your machine; they come straight from the local DB.
 ## Requirements
 
 - **Node.js ≥ 20**
-- **The `claude` CLI** installed and on your `PATH`, authenticated once via
-  `claude login`. ([Claude Code](https://claude.com/claude-code))
+- At least one provider CLI on your `PATH`, authenticated once:
+  - **`claude`** — the default. ([Claude Code](https://claude.com/claude-code),
+    `claude login`)
+  - **`codex`** — only if you set `"provider": "openai"` on an agent.
+    ([OpenAI Codex CLI](https://github.com/openai/codex), `codex login`)
 - macOS or Linux (Windows via WSL — `node-pty` + `better-sqlite3` are native).
 
 ## Quick start
@@ -142,6 +152,7 @@ Everything is optional — OrchestrIA boots with working defaults.
 | `ORCHESTRIA_MEMORY_DISTILL` | off | Distill rolled-over memory into `learnings.md` (opt-in; uses tokens) |
 | `ORCHESTRIA_MAX_CONCURRENT` | `8` | Max agents running at once |
 | `ORCHESTRIA_MISSION_TIMEOUT_MS` | `1800000` | Per-mission wall-clock kill (ms) |
+| `ORCHESTRIA_OPENAI_MODEL` | _(codex default)_ | Model for `openai`-provider agents whose `model` is a Claude id (overrides globally) |
 
 See [`.env.example`](.env.example).
 
@@ -164,6 +175,13 @@ Create `.orchestria/agents/<id>/config.json`:
 Add an optional `.orchestria/agents/researcher/system-prompt.md`. It appears in
 the UI immediately — discovery is filesystem-driven, no code changes.
 
+**Provider.** `"provider"` is optional and defaults to `"claude"`. Set
+`"provider": "openai"` to run the agent on the `codex` CLI instead — leave
+`model` as a Codex id (e.g. `"gpt-5-codex"`), or keep a Claude `model` and let
+the `codex` default apply / set `ORCHESTRIA_OPENAI_MODEL`. An unknown value
+falls back to `claude` rather than failing the mission. You can also flip the
+provider from the Agents page.
+
 ### Configuring a channel
 
 Channel credentials are **git-ignored**. Copy the template and fill it in:
@@ -179,7 +197,8 @@ cp .orchestria/channels/telegram.json.example .orchestria/channels/telegram.json
 src/
   app/                Next.js App Router pages + /api route handlers
   lib/
-    orchestrator/     agent spawning (drives the `claude` CLI via node-pty)
+    orchestrator/     agent spawning via node-pty; providers/ = per-agent
+                      backend (claude → `claude`, openai → `codex`)
     channels/         Telegram + webhook inbound, @agent routing
     routines/         cron-style scheduler
     remote/           scoped token issuing / auth / audit
@@ -195,7 +214,8 @@ OrchestrIA stores agent configs in `.orchestria/`. **Channel credentials,
 databases, logs, memory and `*.bak` files are git-ignored by design** — only
 `*.json.example` channel templates are tracked. Never commit a real bot token,
 password, API key, third-party/client data, or a database snapshot. Authenticate
-the Claude CLI separately (`claude login`); OrchestrIA never reads your key.
+each provider CLI separately (`claude login` / `codex login`); OrchestrIA never
+reads your key.
 
 If you find a security issue, please open a private report rather than a public
 issue.
