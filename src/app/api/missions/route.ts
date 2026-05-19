@@ -21,6 +21,9 @@ interface MissionRow {
   start_ts: number;
   end_ts: number | null;
   source_channel: string | null;
+  cost_usd: number;
+  tokens_in: number;
+  tokens_out: number;
 }
 
 export async function GET(req: Request) {
@@ -36,7 +39,7 @@ export async function GET(req: Request) {
   if (sourceChannel) { where.push("source_channel = ?"); params.push(sourceChannel); }
 
   const sql =
-    "SELECT id, agent_id, title, status, start_ts, end_ts, source_channel FROM missions" +
+    "SELECT id, agent_id, title, status, start_ts, end_ts, source_channel, cost_usd, tokens_in, tokens_out FROM missions" +
     (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
     " ORDER BY start_ts DESC LIMIT 100";
   const rows = getDb().prepare(sql).all(...params) as MissionRow[];
