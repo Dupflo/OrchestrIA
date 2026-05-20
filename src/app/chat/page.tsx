@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { AgentConfig } from "@/lib/mock-data";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -152,7 +153,7 @@ function Bubble({ m }: { m: ChatBubble }) {
             <>
               {m.text ? (
                 <div className="chat-md">
-                  <ReactMarkdown>{m.text}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
                 </div>
               ) : m.streaming ? (
                 <span style={{ opacity: 0.5 }}>…</span>

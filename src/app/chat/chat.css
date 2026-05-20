@@ -384,3 +384,68 @@
   border-left: 2px solid var(--accent-line); padding-left: 10px;
   color: var(--text-dim); margin: 8px 0;
 }
+
+/* GFM tables (enabled via remark-gfm). Without these rules a markdown table
+   collapses into a single line of pipe-separated text — the original bug. */
+.bubble.agent .chat-md table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
+  font-size: 12px;
+  overflow-x: auto;            /* wide tables scroll horizontally inside the bubble */
+}
+.bubble.agent .chat-md thead {
+  background: var(--bg-elev-2);
+  color: var(--text);
+}
+.bubble.agent .chat-md th,
+.bubble.agent .chat-md td {
+  border: 1px solid var(--line);
+  padding: 6px 9px;
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+}
+.bubble.agent .chat-md th {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.bubble.agent .chat-md tbody tr:nth-child(2n) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Lists, inline code, fenced code, hr — basic readability so the rest of a
+   well-formed agent reply does not also look broken next to the new tables. */
+.bubble.agent .chat-md ul,
+.bubble.agent .chat-md ol { margin: 6px 0 6px 18px; padding: 0; }
+.bubble.agent .chat-md li { margin: 2px 0; }
+.bubble.agent .chat-md li input[type="checkbox"] { margin-right: 6px; transform: translateY(1px); }
+.bubble.agent .chat-md code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 0.9em;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.bubble.agent .chat-md pre {
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.bubble.agent .chat-md pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.bubble.agent .chat-md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 10px 0;
+}
+.bubble.agent .chat-md del { color: var(--text-faint); text-decoration: line-through; }
