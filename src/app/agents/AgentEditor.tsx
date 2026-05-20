@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AgentConfig } from "@/lib/mock-data";
-import ChannelsSection from "./ChannelsSection";
 
 // ─── Static config ──────────────────────────────────────────────────────────
 
@@ -303,10 +302,6 @@ export default function AgentEditor({
               <>
                 <span className="crumb">{role}</span><span>/</span>
                 <span className="crumb active">{id}</span>
-                {isMain && <>
-                  <span style={{ marginLeft: 8, opacity: 0.5 }}>·</span>
-                  <span style={{ color: "var(--accent)" }}>CHANNELS HUB</span>
-                </>}
               </>
             )}
           </div>
@@ -514,14 +509,6 @@ export default function AgentEditor({
               Skills sélectionnés sont injectés dans le system prompt à chaque spawn.
             </div>
           </section>
-
-          {/* 05 CHANNELS — only on _main, and only after creation */}
-          {isMain && !isNew && (
-            <section className="section">
-              <SectionHeader num="05" title="Channels" sub="where _main can be reached" />
-              <ChannelsSection />
-            </section>
-          )}
 
           {dirty && <div className="dirty-alert">⚠ changes pending — SAVE to apply</div>}
         </aside>

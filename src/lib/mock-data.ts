@@ -50,7 +50,6 @@ export interface AgentConfig {
   allowedTools: string[];
   deniedTools?: string[];
   planMax?: boolean;
-  channels: Record<string, { on: boolean; value: string }>;
   remote?: { on: boolean; url: string };
   missions: number;
   parent?: string;

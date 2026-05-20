@@ -70,7 +70,6 @@ export function listNativeAgents(): AgentConfig[] {
       systemPrompt: description,
       cwd: "~",
       allowedTools,
-      channels: {},
       missions: 0,
       source: "skill" as const,
     };
@@ -116,7 +115,6 @@ function listClaudeAgentsFromDir(dir: string): AgentConfig[] {
         systemPrompt,
         cwd: "~",
         allowedTools: [],
-        channels: {},
         missions: 0,
         source: "agent" as const,
         // store description separately (shown as subtitle in UI)
@@ -154,7 +152,6 @@ interface RawConfig {
   cwd?: string;
   allowedTools?: string[];
   deniedTools?: string[];
-  channels?: Record<string, { on: boolean; value: string }>;
   remote?: { on: boolean; url: string };
   parent?: string;
   memoryScope?: "NONE" | "SESSION" | "USER" | "GLOBAL";
@@ -178,7 +175,6 @@ function toAgentConfig(name: string, raw: RawConfig): AgentConfig {
     cwd: raw.cwd ?? "~",
     allowedTools: raw.allowedTools ?? [],
     deniedTools: raw.deniedTools,
-    channels: raw.channels ?? {},
     remote: raw.remote,
     missions: 0,
     parent: raw.parent,
@@ -241,7 +237,6 @@ export function createAgent(input: CreateAgentInput): AgentConfig {
     permissionMode: input.permissionMode ?? "auto",
     cwd: input.cwd ?? "~",
     allowedTools: input.allowedTools ?? [],
-    channels: {},
     skills: input.skills ?? [],
   };
   if (input.parent) config.parent = input.parent;
