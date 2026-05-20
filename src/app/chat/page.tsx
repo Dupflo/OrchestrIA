@@ -410,6 +410,12 @@ function ChatPageContent() {
       if (ev.type === "system") setThinkingFor(forAgentId, "loading context");
       else if (ev.type === "tool_use" || ev.type === "tool_result") setThinkingFor(forAgentId, "running tool");
       else if (ev.type === "assistant") setThinkingFor(forAgentId, "drafting response");
+      // Codex CLI emits its own type taxonomy — give the user the same kind
+      // of progress signal instead of leaving the indicator stuck at the
+      // initial "loading context" until MissionComplete fires.
+      else if (ev.type === "thread.started" || ev.type === "turn.started") setThinkingFor(forAgentId, "loading context");
+      else if (ev.type === "item.started" || ev.type === "tool_call") setThinkingFor(forAgentId, "running tool");
+      else if (ev.type === "item.completed" || ev.type === "turn.completed" || ev.type === "agent_message") setThinkingFor(forAgentId, "drafting response");
 
       if (ev.type === "MissionComplete") {
         // The bubble only exists in `messages` when the user is viewing
@@ -814,7 +820,11 @@ function ChatPageContent() {
                 onKeyDown={handleKeyDown}
                 placeholder={currentAgent ? `Message ${currentAgent.name}…  (⏎ to send, ⇧⏎ for newline)` : "Pick an agent first"}
                 rows={1}
-                disabled={!currentAgent || busy}
+                // Always typeable — only the action button reflects in-flight
+                // state. Lets the user compose the next message while a
+                // mission is still streaming. `send()` itself guards against
+                // double-spawn for the same agent.
+                disabled={!currentAgent}
               />
               {busy ? (
                 <button
