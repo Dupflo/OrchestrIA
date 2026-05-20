@@ -100,6 +100,11 @@ const ICON_SEND = (
     <path d="M3 10l14-6-5 14-3-6-6-2z" />
   </svg>
 );
+const ICON_STOP = (
+  <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+    <rect x="5" y="5" width="10" height="10" rx="1" />
+  </svg>
+);
 const ICON_EDIT = (
   <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M13 4l3 3-9 9H4v-3l9-9z" />
@@ -215,8 +220,12 @@ function ChatPageContent() {
   // refresh to talk to someone else").
   const [busyAgents, setBusyAgents] = useState<Set<string>>(new Set());
   const [thinkingByAgent, setThinkingByAgent] = useState<Map<string, string>>(new Map());
+  // Mission id currently running for each agent — kept across agent switches
+  // so the stop button can still target it when the user navigates back.
+  const [runningByAgent, setRunningByAgent] = useState<Map<string, string>>(new Map());
   const busy = agentId ? busyAgents.has(agentId) : false;
   const thinkingStep = agentId ? thinkingByAgent.get(agentId) ?? null : null;
+  const runningMissionId = agentId ? runningByAgent.get(agentId) ?? null : null;
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [mode, setMode] = useState<ChatMode>("question");
   const [slashQuery, setSlashQuery] = useState<string | null>(null);
@@ -249,6 +258,24 @@ function ChatPageContent() {
       if (step === null) next.delete(aid); else next.set(aid, step);
       return next;
     });
+  };
+  const setRunningFor = (aid: string, mid: string | null) => {
+    setRunningByAgent((prev) => {
+      const cur = prev.get(aid) ?? null;
+      if (cur === mid) return prev;
+      const next = new Map(prev);
+      if (mid === null) next.delete(aid); else next.set(aid, mid);
+      return next;
+    });
+  };
+
+  const haltCurrent = async () => {
+    if (!runningMissionId) return;
+    await fetch(`/api/missions/${runningMissionId}/halt`, { method: "POST" })
+      .catch(() => { /* server will still emit MissionComplete on its own */ });
+    // No optimistic UI cleanup — the SSE handler clears busy/thinking when
+    // MissionComplete arrives from the killed PTY, which is the single source
+    // of truth for "this mission is over".
   };
 
   // load agents
@@ -366,6 +393,7 @@ function ChatPageContent() {
   const attachSse = (mid: string, agentBubbleId: string, forAgentId: string) => {
     const es = new EventSource(`/api/missions/${mid}/stream`);
     ssesRef.current.set(mid, es);
+    setRunningFor(forAgentId, mid);
     let lastResultText: string | null = null;
     setThinkingFor(forAgentId, "loading context");
     es.onmessage = (msg) => {
@@ -394,6 +422,7 @@ function ChatPageContent() {
         ));
         markBusy(forAgentId, false);
         setThinkingFor(forAgentId, null);
+        setRunningFor(forAgentId, null);
         if (isCurrent) reloadSessions();
         es.close();
         ssesRef.current.delete(mid);
@@ -787,9 +816,21 @@ function ChatPageContent() {
                 rows={1}
                 disabled={!currentAgent || busy}
               />
-              <button className="send-btn" onClick={send} disabled={!input.trim() || busy || !currentAgent}>
-                {busy ? <span style={{ opacity: 0.5 }}>…</span> : ICON_SEND}
-              </button>
+              {busy ? (
+                <button
+                  className="send-btn"
+                  onClick={haltCurrent}
+                  disabled={!runningMissionId}
+                  title={runningMissionId ? "Stop this mission" : "Starting…"}
+                  aria-label="Stop"
+                  style={{ background: "var(--err)", color: "#fff", borderColor: "var(--err)" }}>
+                  {runningMissionId ? ICON_STOP : <span style={{ opacity: 0.5 }}>…</span>}
+                </button>
+              ) : (
+                <button className="send-btn" onClick={send} disabled={!input.trim() || !currentAgent} aria-label="Send">
+                  {ICON_SEND}
+                </button>
+              )}
             </div>
 
             <div className="input-footer">
