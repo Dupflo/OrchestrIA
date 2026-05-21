@@ -131,7 +131,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ name: s
       });
     }
 
-    const route = resolveRoute(text, config);
+    // Routing precedence for Discord is "the slash command name IS the
+    // bot": if `agent_routing` has an entry for the command name (with or
+    // without an `@` prefix, since the schema is shared with Telegram), use
+    // it directly. Otherwise fall back to the regular @-in-text router so
+    // a generic command like `/ask @ledger ...` still works.
+    const commandName = interaction.data?.name ?? "";
+    const fromCommand = config.agent_routing?.[commandName]
+      ?? config.agent_routing?.[`@${commandName}`];
+    const route = fromCommand
+      ? { agent: fromCommand, cleanedInput: text }
+      : resolveRoute(text, config);
     const replyMeta: Record<string, unknown> = {
       interaction_id: interaction.id,
       interaction_token: interaction.token,

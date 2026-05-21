@@ -316,9 +316,22 @@ function ChannelEditor({ name, initial, agents, running, subscribers, onSaved, o
               <input className="input mono" placeholder="987654321098765432"
                 value={dcChannel} onChange={(e) => setDcChannel(e.target.value)} />
             </Field>
-            <div style={{ padding: "8px 12px", background: "rgba(88,101,242,0.08)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 4, fontSize: 11, color: "var(--text-faint)", lineHeight: 1.5 }}>
-              ℹ Mode <strong>slash-commands</strong> : enregistre une commande côté Discord pointant l&apos;<em>Interactions Endpoint URL</em> vers{" "}
-              <code className="mono">https://&lt;ton-hote&gt;/api/channels/{isNew ? draftName || "&lt;name&gt;" : name}/inbound</code>. La vérif de signature Ed25519 est faite à chaque requête.
+            <div style={{ padding: "10px 12px", background: "rgba(88,101,242,0.08)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 4, fontSize: 11, color: "var(--text-faint)", lineHeight: 1.6 }}>
+              <div style={{ marginBottom: 6, color: "var(--text-dim)", fontWeight: 600 }}>Discord setup (slash-commands)</div>
+              <div style={{ marginBottom: 6 }}>
+                <strong>1.</strong> Discord doit pouvoir POSTer chez toi. En local, expose ton dev server via
+                {" "}<a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>Cloudflare Tunnel</a> :
+                {" "}<code className="mono" style={{ background: "rgba(255,255,255,0.05)", padding: "1px 5px", borderRadius: 3 }}>cloudflared tunnel --url http://localhost:8000</code>
+                {" "}— URL stable, traffic chiffré, port jamais ouvert.
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <strong>2.</strong> Dans Discord Developer Portal → <em>General Information → Interactions Endpoint URL</em>, colle :
+                {" "}<code className="mono" style={{ background: "rgba(255,255,255,0.05)", padding: "1px 5px", borderRadius: 3, display: "inline-block", marginTop: 2 }}>https://&lt;ton-tunnel&gt;/api/channels/{isNew ? draftName || "&lt;name&gt;" : name}/inbound</code>
+                {" "}— Discord PING l&apos;URL, OrchestrIA répond PONG (signature Ed25519 vérifiée).
+              </div>
+              <div>
+                <strong>3.</strong> Pour <em>1 salon = 1 bot</em>, enregistre une slash-command par agent (<code className="mono">/atlas</code>, <code className="mono">/ledger</code>, …) et utilise le champ <strong>AGENT ROUTING</strong> ci-dessous pour mapper le nom de commande à l&apos;agent. Exemple : <code className="mono">atlas:atlas, ledger:ledger</code>. Sinon tous les <code className="mono">/cmd</code> tombent sur <strong>default_agent</strong>.
+              </div>
             </div>
           </>
         )}
@@ -339,8 +352,11 @@ function ChannelEditor({ name, initial, agents, running, subscribers, onSaved, o
         {/* Agent routing (advanced) */}
         <Field
           label="AGENT ROUTING (optionnel)"
-          hint='CSV de paires "@tag:agent_id". Quand un message commence par @tag, il est routé vers cet agent au lieu du default. Ex: "@research:atlas, @ops:ledger".'>
-          <input className="input mono" placeholder="@research:atlas, @ops:ledger"
+          hint={type === "discord"
+            ? 'CSV de paires "command_name:agent_id". Le nom de la slash-command devient la clé de routing. Ex: "atlas:atlas, ledger:ledger" → /atlas et /ledger vont à leur agent. Sans entrée matchant, on retombe sur default_agent.'
+            : 'CSV de paires "@tag:agent_id". Quand un message commence par @tag, il est routé vers cet agent au lieu du default. Ex: "@research:atlas, @ops:ledger".'}>
+          <input className="input mono"
+            placeholder={type === "discord" ? "atlas:atlas, ledger:ledger" : "@research:atlas, @ops:ledger"}
             value={routing} onChange={(e) => setRouting(e.target.value)} />
         </Field>
 
